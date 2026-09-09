@@ -14,4 +14,7 @@ export NDK_HOME=$PWD/android-ndk-r10e/
     exit 1
 }
 ./waf build &&
-./waf install
+./waf install &&
+# ModHub fork: 共享 libstdc++ 运行时，必须随产物分发，
+# 否则各 .so 的 C++ 异常/RTTI 符号运行时无宿主
+cp android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a/libgnustl_shared.so dist/lib/arm64-v8a/

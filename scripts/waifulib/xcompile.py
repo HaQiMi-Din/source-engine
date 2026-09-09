@@ -350,7 +350,12 @@ def configure(conf):
 			os.path.abspath(os.path.join(android.ndk_home, 'sources', 'cxx-stl', 'gnu-libstdc++', '4.9', 'libs', stlarch, 'include'))
 		]
 		conf.env.STLIBPATH += [os.path.abspath(os.path.join(android.ndk_home, 'sources','cxx-stl','gnu-libstdc++','4.9','libs',stlarch))]
-		conf.env.LDFLAGS += ['-lgnustl_static']
+		# ModHub fork: 用共享 libstdc++（libgnustl_shared.so）而非静态，
+		# 否则 bad_typeid 等 C++ 异常/RTTI 符号不会链入各 .so，
+		# 与模板 APK 的 Clang 引擎混装时 dlopen 报
+		# "cannot locate symbol _ZNSt10bad_typeidD1Ev"。
+		# libgnustl_shared.so 随产物打进 APK 的 lib/arm64-v8a/。
+		conf.env.LDFLAGS += ['-lgnustl_shared']
 
 		conf.env.HAVE_M = True
 		if android.is_hardfp():
