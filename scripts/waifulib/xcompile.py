@@ -355,7 +355,12 @@ def configure(conf):
 		# 与模板 APK 的 Clang 引擎混装时 dlopen 报
 		# "cannot locate symbol _ZNSt10bad_typeidD1Ev"。
 		# libgnustl_shared.so 随产物打进 APK 的 lib/arm64-v8a/。
-		conf.env.LDFLAGS += ['-lgnustl_shared']
+		# 显式 -L sysroot/usr/lib 并 -lm：libgnustl_shared.so 的
+		# DT_NEEDED(libm.so/frexpl) 否则链接器找不到。
+		conf.env.LDFLAGS += [
+			'-lgnustl_shared',
+			'-L%s/platforms/android-%d/arch-arm64/usr/lib' % (android.ndk_home, int(values[2])),
+			'-lm']
 
 		conf.env.HAVE_M = True
 		if android.is_hardfp():
