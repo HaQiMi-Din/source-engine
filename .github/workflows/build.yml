@@ -31,8 +31,9 @@ jobs:
         scripts/build-android-armv7a.sh
 
   # ModHub：安卓 arm64（aarch64）引擎，内置 GMA 自动加载器
+  # 注：ubuntu-20.04 runner 已退役（2025-04），改用 22.04
   build-android-arm64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v2
