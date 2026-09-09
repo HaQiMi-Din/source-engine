@@ -48,6 +48,36 @@ typedef __int128_t int128;
 #define TSLIST_NODE_ALIGNMENT 16
 
 #ifdef POSIX
+// ModHub fork: NDK r10e 的 GCC 4.9 aarch64 libgcc 不提供
+// __sync_bool_compare_and_swap_16，直接用 ldxp/stxp 手写
+// 16 字节 CAS（地址须 16 字节对齐，TSLIST_HEAD_ALIGNMENT 已保证）。
+#if defined(PLATFORM_64BITS) && defined(__aarch64__) && defined(__GNUC__) && (__GNUC__ < 5)
+inline bool ThreadInterlockedAssignIf128( int128 volatile * pDest, const int128 &value, const int128 &comparand )
+{
+	int128 local_comparand = comparand;
+	unsigned long long old_lo = (unsigned long long)local_comparand;
+	unsigned long long old_hi = (unsigned long long)(local_comparand >> 64);
+	unsigned long long new_lo = (unsigned long long)value;
+	unsigned long long new_hi = (unsigned long long)(value >> 64);
+	unsigned long long out_lo, out_hi;
+	unsigned long long res;
+	__asm__ __volatile__(
+		"1: ldxp %0, %1, [%4]\n\t"
+		"cmp %0, %2\n\t"
+		"ccmp %1, %3, #0, eq\n\t"
+		"b.ne 2f\n\t"
+		"stxp %w5, %6, %7, [%4]\n\t"
+		"cbnz %w5, 1b\n\t"
+		"mov %w5, #1\n\t"
+		"b 3f\n\t"
+		"2: mov %w5, #0\n\t"
+		"3:\n\t"
+		: "=&r"(out_lo), "=&r"(out_hi), "=&r"(res)
+		: "r"(old_lo), "r"(old_hi), "r"(new_lo), "r"(new_hi), "r"(pDest)
+		: "memory", "cc");
+	return res != 0;
+}
+#else
 inline bool ThreadInterlockedAssignIf128( int128 volatile * pDest, const int128 &value, const int128 &comparand ) 
 {
     // We do not want the original comparand modified by the swap
@@ -55,6 +85,7 @@ inline bool ThreadInterlockedAssignIf128( int128 volatile * pDest, const int128 
     int128 local_comparand = comparand;
 	return __sync_bool_compare_and_swap( pDest, local_comparand, value );
 }
+#endif
 #endif
 
 inline bool ThreadInterlockedAssignIf64x128( volatile int128 *pDest, const int128 &value, const int128 &comperand )
