@@ -143,27 +143,63 @@
 
 /* ModHub fork: NDK r10e 的 GCC 4.9 arm_neon.h 缺 f64 重解释内建
  * （GCC 5+ 才有 vreinterpretq_f64_* / vreinterpretq_*_f64），
- * 用空 asm 寄存器视图转换补齐（无指令开销）。 */
+ * 用空 asm 寄存器视图转换补齐（无指令开销）。
+ * 注意 q 后缀 = 128 位向量：s32=4x32、f32=4x32、s64/u64=2x64。 */
 #if defined(__aarch64__) && defined(__GNUC__) && (__GNUC__ < 5) && !defined(__clang__)
-#define SSE2NEON_F64_REINT(TFROM) \
-	FORCE_INLINE float64x2_t vreinterpretq_f64_##TFROM(TFROM##x2_t a) \
-	{ \
-		float64x2_t r; \
-		__asm__("" : "=w"(r) : "0"(a)); \
-		return r; \
-	} \
-	FORCE_INLINE TFROM##x2_t vreinterpretq_##TFROM##_f64(float64x2_t a) \
-	{ \
-		TFROM##x2_t r; \
-		__asm__("" : "=w"(r) : "0"(a)); \
-		return r; \
-	}
-SSE2NEON_F64_REINT(s32)
-SSE2NEON_F64_REINT(s64)
-SSE2NEON_F64_REINT(u32)
-SSE2NEON_F64_REINT(u64)
-SSE2NEON_F64_REINT(f32)
-#undef SSE2NEON_F64_REINT
+FORCE_INLINE float64x2_t vreinterpretq_f64_s32(int32x4_t a)
+{
+	float64x2_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE int32x4_t vreinterpretq_s32_f64(float64x2_t a)
+{
+	int32x4_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE float64x2_t vreinterpretq_f64_s64(int64x2_t a)
+{
+	float64x2_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE int64x2_t vreinterpretq_s64_f64(float64x2_t a)
+{
+	int64x2_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE float64x2_t vreinterpretq_f64_u64(uint64x2_t a)
+{
+	float64x2_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE uint64x2_t vreinterpretq_u64_f64(float64x2_t a)
+{
+	uint64x2_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE float64x2_t vreinterpretq_f64_f32(float32x4_t a)
+{
+	float64x2_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE float32x4_t vreinterpretq_f32_f64(float64x2_t a)
+{
+	float32x4_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
+FORCE_INLINE uint32x4_t vreinterpretq_u32_f64(float64x2_t a)
+{
+	uint32x4_t r;
+	__asm__("" : "=w"(r) : "0"(a));
+	return r;
+}
 #endif
 
 /* Rounding functions require either Aarch64 instructions or libm failback */
