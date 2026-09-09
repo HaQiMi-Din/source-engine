@@ -354,10 +354,14 @@ def configure(conf):
 		# 否则 bad_typeid 等 C++ 异常/RTTI 符号不会链入各 .so，
 		# 与模板 APK 的 Clang 引擎混装时 dlopen 报
 		# "cannot locate symbol _ZNSt10bad_typeidD1Ev"。
-		# libgnustl_shared.so 随产物打进 APK 的 lib/arm64-v8a/。
+		# libgnustl_shared.so / libstdc++.so 随产物打进 APK 的 lib/arm64-v8a/。
+		# -nostdlib++：GCC 驱动默认还会自动 -lstdc++（写进 DT_NEEDED
+		# 的 libstdc++.so），Android 系统不提供该库，必须去掉；
+		# 显式 -lgnustl_shared 已提供全部 C++ 运行时符号。
 		# 显式 -L sysroot/usr/lib 并 -lm：libgnustl_shared.so 的
 		# DT_NEEDED(libm.so/frexpl) 否则链接器找不到。
 		conf.env.LDFLAGS += [
+			'-nostdlib++',
 			'-lgnustl_shared',
 			'-L%s/platforms/android-%d/arch-arm64/usr/lib' % (android.ndk_home, int(values[2])),
 			'-lm']
