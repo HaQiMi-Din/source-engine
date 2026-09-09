@@ -9,8 +9,8 @@ unzip android-ndk-r10e-linux-x86_64.zip
 export ANDROID_NDK_HOME=$PWD/android-ndk-r10e/
 export NDK_HOME=$PWD/android-ndk-r10e/
 ./waf configure -T debug --prefix=$PWD/dist --android=aarch64,4.9,21 --togles --disable-warns --build-games=hl2 || {
-    echo "===== config.log (tail) ====="
-    tail -100 build/config.log 2>/dev/null || true
+    echo "===== config.log (full) ====="
+    cat build/config.log 2>/dev/null || true
     exit 1
 }
 ./waf build &&
