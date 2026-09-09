@@ -41,6 +41,11 @@
 #include "istudiorender.h"
 #include "vgui/IVGui.h"
 #include "IHammer.h"
+
+// ModHub fork: 早期启动埋点（定义在 launcher/android/main.cpp）
+#ifdef ANDROID
+extern void ModHub_TraceLog( const char *fmt, ... );
+#endif
 #include "datacache/idatacache.h"
 #include "datacache/imdlcache.h"
 #include "vphysics_interface.h"
@@ -775,7 +780,6 @@ bool CSourceAppSystemGroup::Create()
 bool CSourceAppSystemGroup::PreInit()
 {
 #ifdef ANDROID
-	extern void ModHub_TraceLog( const char *fmt, ... );
 	ModHub_TraceLog( "[ModHub] launcher.cpp: PreInit, creating engine.log (step 10)" );
 #endif
 	if ( !CommandLine()->FindParm( "-nolog" ) )
@@ -1238,7 +1242,6 @@ DLL_EXPORT int LauncherMain( int argc, char **argv )
 #endif // LINUX
 
 #ifdef ANDROID
-	void ModHub_TraceLog( const char *fmt, ... );
 	ModHub_TraceLog( "[ModHub] launcher.cpp: LauncherMain entered (step 7)" );
 #endif
 
