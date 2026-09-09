@@ -689,8 +689,15 @@ bool CSourceAppSystemGroup::Create()
 	AddSystem( (IAppSystem *)CreateSDLMgr(), SDLMGR_INTERFACE_VERSION );
 #endif
 
+#ifdef ANDROID
+	ModHub_TraceLog( "[ModHub] launcher.cpp: loading engine systems (step 8)" );
+#endif
 	if ( !AddSystems( appSystems ) ) 
 		return false;
+
+#ifdef ANDROID
+	ModHub_TraceLog( "[ModHub] launcher.cpp: engine systems loaded OK (step 9)" );
+#endif
 	
 	// This will be NULL for games that don't support VR. That's ok. Just don't load the DLL
 	AppModule_t sourceVRModule = LoadModule( "sourcevr" DLL_EXT_STRING );
@@ -767,6 +774,10 @@ bool CSourceAppSystemGroup::Create()
 
 bool CSourceAppSystemGroup::PreInit()
 {
+#ifdef ANDROID
+	extern void ModHub_TraceLog( const char *fmt, ... );
+	ModHub_TraceLog( "[ModHub] launcher.cpp: PreInit, creating engine.log (step 10)" );
+#endif
 	if ( !CommandLine()->FindParm( "-nolog" ) )
 		DebugLogger()->Init("engine.log");
 	else
@@ -1225,6 +1236,11 @@ DLL_EXPORT int LauncherMain( int argc, char **argv )
 	}
 
 #endif // LINUX
+
+#ifdef ANDROID
+	void ModHub_TraceLog( const char *fmt, ... );
+	ModHub_TraceLog( "[ModHub] launcher.cpp: LauncherMain entered (step 7)" );
+#endif
 
 #ifdef USE_SDL
 	SDL_version ver;

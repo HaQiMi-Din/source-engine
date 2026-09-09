@@ -17,7 +17,7 @@ GNU General Public License for more details.
 #include <dlfcn.h>
 #include <jni.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <SDL_hints.h>
 #include "tier0/dbg.h"
@@ -26,6 +26,29 @@ GNU General Public License for more details.
 char *LauncherArgv[512];
 char java_args[4096];
 int iLastArgs = 0;
+
+// ModHub fork: 早期启动埋点。engine.log 要等引擎初始化后才写，
+// 若崩在 Java/JNI/launcher 阶段则无任何文件证据。
+// 这里在 launcher 的每个关键步骤追加写 /storage/emulated/0/srceng/launcher.log，
+// 崩溃时用户直接读该文件即可判断崩在哪一步（若文件根本没生成=launcher.so 都没加载成功）。
+void ModHub_TraceLog( const char *fmt, ... )
+{
+	static char path[1024];
+	const char *appdata = getenv( "APP_DATA_PATH" );
+	if ( !appdata || !*appdata )
+		appdata = "/storage/emulated/0/srceng";
+	snprintf( path, sizeof path, "%s/launcher.log", appdata );
+
+	FILE *f = fopen( path, "a" );
+	if ( !f )
+		return;
+	va_list ap;
+	va_start( ap, fmt );
+	vfprintf( f, fmt, ap );
+	va_end( ap );
+	fprintf( f, "\n" );
+	fclose( f );
+}
 
 extern void InitCrashHandler();
 DLL_EXPORT int LauncherMain( int argc, char **argv ); // from launcher.cpp
@@ -119,8 +142,10 @@ void android_property_print(const char *name)
 
 DLL_EXPORT int LauncherMainAndroid( int argc, char **argv )
 {
+	ModHub_TraceLog( "[ModHub] step 1: LauncherMainAndroid entered (launcher.so loaded OK), argc=%d", argc );
 	InitCrashHandler();
 
+	ModHub_TraceLog( "[ModHub] step 2: crash handler installed" );
 	Msg("GetTotalMemory() = %.2f \n", GetTotalMemory());
 
 	android_property_print("ro.build.version.sdk");
@@ -129,10 +154,15 @@ DLL_EXPORT int LauncherMainAndroid( int argc, char **argv )
 	android_property_print("ro.product.model");
 	android_property_print("ro.product.name");
 
+	ModHub_TraceLog( "[ModHub] step 3: props dumped" );
 	SetLauncherArgs();
 
+	ModHub_TraceLog( "[ModHub] step 4: launcher args set, iLastArgs=%d", iLastArgs );
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 	DeclareCurrentThreadIsMainThread(); // Init thread propertly on Android
 
-	return LauncherMain(iLastArgs, LauncherArgv);
+	ModHub_TraceLog( "[ModHub] step 5: SDL hint set, calling LauncherMain" );
+	int ret = LauncherMain(iLastArgs, LauncherArgv);
+	ModHub_TraceLog( "[ModHub] step 6: LauncherMain returned %d", ret );
+	return ret;
 }
