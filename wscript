@@ -405,10 +405,13 @@ def check_deps(conf):
 				conf.check_cfg(package='opus', uselib_store='OPUS', args=['--cflags', '--libs'])
 	else:
 		# ModHub fork: SDL2 动态链接检查需要 Android/GL 系统库，否则
-		# lib/android/<cpu>/libSDL2.so 的未定义引用导致 configure 失败
+		# lib/android/<cpu>/libSDL2.so 的未定义引用导致 configure 失败。
+		# -lc 必须放 LDFLAGS（链接命令末尾），在 -lSDL2 之后才能解析
+		# libc 的 @LIBC 版本化符号（单遍链接）。
 		conf.env.append_unique('LINKFLAGS', [
 			'-lGLESv1_CM', '-lGLESv2', '-landroid',
-			'-lOpenSLES', '-llog', '-lz', '-lc'])
+			'-lOpenSLES', '-llog', '-lz'])
+		conf.env.append_unique('LDFLAGS', ['-lc'])
 		conf.check(lib='SDL2', uselib_store='SDL2')
 		conf.check(lib='freetype2', uselib_store='FT2')
 		conf.check(lib='jpeg', uselib_store='JPEG', define_name='HAVE_JPEG')
