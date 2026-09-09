@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstdio>
 #include <cerrno>
-#include <cstring>
 #include <fstream>
 #include <string>
 
@@ -142,7 +141,7 @@ bool ParseModern(const std::string& path, ModGma& out, std::string& err) {
         err = "文件过短，头部不完整";
         return false;
     }
-    if (std::memcmp(sig, "GMAD", 4) != 0) {
+    if (!(sig[0]=='G' && sig[1]=='M' && sig[2]=='A' && sig[3]=='D')) {
         err = "缺少 GMAD 签名，不是 GMA 文件";
         return false;
     }
@@ -256,7 +255,7 @@ bool ParseClassic(const std::string& path, ModGma& out, std::string& err) {
         err = "文件过短，头部不完整（经典布局）";
         return false;
     }
-    if (std::memcmp(&hdr[0], "GMAD", 4) != 0) {
+    if (!(hdr[0]=='G' && hdr[1]=='M' && hdr[2]=='A' && hdr[3]=='D')) {
         err = "缺少 GMAD 签名，不是 GMA 文件";
         return false;
     }
