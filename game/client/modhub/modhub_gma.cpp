@@ -11,6 +11,7 @@
 #include <cerrno>
 #include <cstring>
 #include <fstream>
+#include <string>
 
 #include <dirent.h>
 #include <strings.h>
@@ -20,6 +21,14 @@
 
 namespace modhub {
 namespace {
+
+// C++98 兼容的整数转字符串（引擎编译标准 gnu++98，无 std::to_string）
+std::string Itoa(unsigned long long v)
+{
+	char buf[32];
+	snprintf(buf, sizeof(buf), "%llu", v);
+	return std::string(buf);
+}
 
 bool ReadBytes(std::ifstream& f, void* dst, std::size_t n) {
     f.read(static_cast<char*>(dst), static_cast<std::streamsize>(n));
@@ -139,7 +148,7 @@ bool ParseModern(const std::string& path, ModGma& out, std::string& err) {
     }
     const std::uint32_t version = sig[4];
     if (version == 0 || version > 3) {
-        err = "不支持的 GMA 版本: " + std::to_string(version);
+        err = "不支持的 GMA 版本: " + Itoa(version);
         return false;
     }
 
@@ -255,7 +264,7 @@ bool ParseClassic(const std::string& path, ModGma& out, std::string& err) {
     std::size_t o = 4;
     const std::uint32_t version = LE32(&hdr[o]); o += 4;
     if (version == 0 || version > 3) {
-        err = "不支持的 GMA 版本: " + std::to_string(version);
+        err = "不支持的 GMA 版本: " + Itoa(version);
         return false;
     }
     out.format = 1;  // 经典布局统一记 1
@@ -281,7 +290,7 @@ bool ParseClassic(const std::string& path, ModGma& out, std::string& err) {
             break;
         }
         if (nameLen > (1u << 20)) {
-            err = "条目名长度异常: " + std::to_string(nameLen);
+            err = "条目名长度异常: " + Itoa(nameLen);
             return false;
         }
         std::string name(nameLen, '\0');
