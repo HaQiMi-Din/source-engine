@@ -74,6 +74,13 @@ $Configuration
 
 $Project
 {
+	$Folder "ModHub"
+	{
+		$File	"modhub/modhub_gma.cpp"
+		$File	"modhub/modhub_gma.h"
+		$File	"modhub/modhub_hook.cpp"
+		$File	"modhub/modhub_hook.h"
+	}
 	$Folder "Replay"
 	{
 		$File	"replay/replaycamera.cpp"

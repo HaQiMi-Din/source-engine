@@ -30,6 +30,25 @@ jobs:
       run: |
         scripts/build-android-armv7a.sh
 
+  # ModHub：安卓 arm64（aarch64）引擎，内置 GMA 自动加载器
+  build-android-arm64:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build android-arm64
+      run: |
+        scripts/build-android-arm64.sh
+    - name: 收集引擎产物
+      run: |
+        find dist -type f | sort | head -100
+        du -sh dist
+    - uses: actions/upload-artifact@v4
+      with:
+        name: source-engine-android-arm64
+        path: dist/**
+        if-no-files-found: error
+
   build-windows-i386:
     runs-on: windows-2019
 

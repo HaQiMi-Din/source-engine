@@ -6,6 +6,7 @@
 //===========================================================================//
 #include "cbase.h"
 #include <crtmemdebug.h>
+#include "modhub/modhub_hook.h"
 #include "vgui_int.h"
 #include "clientmode.h"
 #include "iinput.h"
@@ -1088,6 +1089,9 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 #ifndef _X360
 	HookHapticMessages(); // Always hook the messages
 #endif
+
+	// ModHub: 扫描并自动挂载 mod/ 与 custom/mod_hub/mod/ 下的 .gma 附加组件
+	ModHub_RunStartup( engine->GetGameDirectory() );
 
 	return true;
 }
