@@ -29,25 +29,48 @@ int iLastArgs = 0;
 
 // ModHub fork: 早期启动埋点。engine.log 要等引擎初始化后才写，
 // 若崩在 Java/JNI/launcher 阶段则无任何文件证据。
-// 这里在 launcher 的每个关键步骤追加写 /storage/emulated/0/srceng/launcher.log，
-// 崩溃时用户直接读该文件即可判断崩在哪一步（若文件根本没生成=launcher.so 都没加载成功）。
-void ModHub_TraceLog( const char *fmt, ... )
+// 这里在 launcher 的每个关键步骤写 launcher.log。
+// 写多个候选路径（用户可见的 srceng / APP_DATA_PATH 私有目录 / 当前目录），
+// 任何一个能写成功就写，避免"写进了用户看不到的目录"或"目录不存在写失败"。
+static void ModHub_TraceLogPath( const char *path, const char *msg )
 {
-	static char path[1024];
-	const char *appdata = getenv( "APP_DATA_PATH" );
-	if ( !appdata || !*appdata )
-		appdata = "/storage/emulated/0/srceng";
-	snprintf( path, sizeof path, "%s/launcher.log", appdata );
-
 	FILE *f = fopen( path, "a" );
 	if ( !f )
 		return;
+	fprintf( f, "%s\n", msg );
+	fclose( f );
+}
+
+void ModHub_TraceLog( const char *fmt, ... )
+{
+	char msg[2048];
 	va_list ap;
 	va_start( ap, fmt );
-	vfprintf( f, fmt, ap );
+	vsnprintf( msg, sizeof msg, fmt, ap );
 	va_end( ap );
-	fprintf( f, "\n" );
-	fclose( f );
+
+	static const char *cands[4];
+	int nc = 0;
+	const char *appdata = getenv( "APP_DATA_PATH" );
+	if ( appdata && *appdata )
+		cands[nc++] = appdata;
+	cands[nc++] = "/storage/emulated/0/srceng";
+	cands[nc++] = ".";
+
+	char path[1024];
+	for ( int i = 0; i < nc; i++ )
+	{
+		snprintf( path, sizeof path, "%s/launcher.log", cands[i] );
+		ModHub_TraceLogPath( path, msg );
+	}
+}
+
+// JNI_OnLoad：Java loadLibrary("launcher") dlopen 成功即调用。
+// 这是比 LauncherMainAndroid 更早的探针——能确认 dlopen 是否真的发生。
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad( JavaVM *vm, void *reserved )
+{
+	ModHub_TraceLog( "[ModHub] JNI_OnLoad: launcher.so dlopen OK (step 0)" );
+	return JNI_VERSION_1_6;
 }
 
 extern void InitCrashHandler();
