@@ -1,0 +1,43 @@
+name: build-luaj
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Clone luaj
+        run: git clone --depth 1 https://github.com/luaj/luaj.git
+
+      - name: Compile luaj to classes
+        run: |
+          cd luaj
+          mkdir -p out
+          javac -d out $(find src/main/java -name '*.java') 2>&1 | tail -5
+          echo "classes: $(find out -name '*.class' | wc -l)"
+
+      - name: Find d8
+        run: |
+          ls $ANDROID_HOME/build-tools/
+          D8=$(ls -d $ANDROID_HOME/build-tools/*/d8 | sort -V | tail -1)
+          echo "D8=$D8"
+          echo "$D8" > /tmp/d8path.txt
+
+      - name: d8 to dex
+        run: |
+          cd luaj
+          D8=$(cat /tmp/d8path.txt)
+          # 编译产物里可能有 module-info / 空目录，只取 class
+          $D8 --output . --min-api 21 $(find out -name '*.class')
+          ls -la classes.dex
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: luaj-dex
+          path: luaj/classes.dex
